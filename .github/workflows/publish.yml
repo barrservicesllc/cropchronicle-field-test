@@ -1,0 +1,42 @@
+name: Publish CropChronicle
+
+on:
+  push:
+    branches: [main]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v6
+      - name: Vendor pinned map runtime
+        shell: bash
+        run: |
+          set -euo pipefail
+          mkdir -p vendor
+          base="https://unpkg.com/maplibre-gl@6.11.2/dist"
+          for f in maplibre-gl.mjs maplibre-gl-shared.mjs maplibre-gl-worker.mjs maplibre-gl.css; do
+            curl --fail --location --retry 3 --silent --show-error "$base/$f" -o "vendor/$f"
+            test -s "vendor/$f"
+          done
+      - name: Public release safety scan
+        shell: bash
+        run: |
+          set -euo pipefail
+          ! grep -R -E 'barrservicesllc|collaborative-ai-workshop|Workshop-2\.0|127\.0\.0\.1|localhost:8767|ghp_[A-Za-z0-9]+|github_pat_[A-Za-z0-9_]+' . --exclude-dir=.git --exclude='publish.yml'
+          test -s index.html
+          test -s sw.js
+          test -s manifest.webmanifest
+      - name: Commit vendored runtime
+        shell: bash
+        run: |
+          git config user.name "CropChronicle Release"
+          git config user.email "actions@users.noreply.github.com"
+          git add vendor
+          git diff --cached --quiet && exit 0
+          git commit -m "Vendor pinned MapLibre runtime"
+          git push
