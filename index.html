@@ -1,0 +1,134 @@
+<!doctype html>
+<html lang="en">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width,initial-scale=1,viewport-fit=cover">
+  <meta name="theme-color" content="#102116">
+  <meta name="mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-capable" content="yes">
+  <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+  <meta name="apple-mobile-web-app-title" content="CropChronicle">
+  <link rel="manifest" href="./manifest.webmanifest">
+  <link rel="icon" href="./icon.svg" type="image/svg+xml">
+  <link rel="apple-touch-icon" href="./icon.svg"><link id="mapLibreCss" rel="stylesheet" href="./vendor/maplibre-gl.css">
+  <link rel="stylesheet" href="./styles.css">
+  <title>CropChronicle</title>
+</head>
+<body class="farm-shell"><div class="farm-backdrop" aria-hidden="true"></div>
+  <header>
+    <div><span class="eyebrow">FIELD NOTES THAT WORK WITHOUT SIGNAL</span><h1>CropChronicle</h1></div>
+    <button id="showInstall" class="secondary compact">Install</button>
+  </header>
+  <nav class="tabs" aria-label="Main screens">
+    <button class="tab active" data-view="map">Map</button><button class="tab" data-view="today">Today</button>
+    <button class="tab" data-view="places">Places</button>
+    <button class="tab" data-view="chronicle">Chronicle</button>
+  </nav>
+  <div class="workspace"><aside class="farm-sidebar"><div class="sidebar-card"><div class="eyebrow">FARM OVERVIEW</div><strong id="sidebarFarm">My Farm</strong><span id="sidebarPlace">Select a field</span><div class="sidebar-stats"><span><b id="sidebarFields">0</b> Fields</span><span><b id="sidebarCrops">0</b> Crops</span></div></div><nav class="sidebar-nav"><button type="button" data-jump="map">▰ Map</button><button type="button" data-jump="today">▣ Today</button><button type="button" data-jump="places">● Places</button><button type="button" data-action="scout">◉ Observations</button><button type="button" data-action="application">△ Applications</button><button type="button" data-action="harvest">✦ Harvests</button><button type="button" data-action="experiment">⚗ Experiments</button><button type="button" data-action="weather">☁ Weather</button><button type="button" data-jump="chronicle">▥ Reports / Chronicle</button></nav><div class="sidebar-backup"><span>Offline farm record</span><button type="button" data-action="backup">Backup now</button></div></aside><main class="content-stage">
+    <section class="farm-status-strip"><div><span class="eyebrow">FARM STATUS</span><strong>Offline-ready field record</strong></div><span>Records stay on this device</span><details class="tech-details"><summary>System</summary><div class="detail-grid"><span>Storage: IndexedDB</span><span>Offline cache: ready after first load</span><span>Future-sync outbox: <b id="outboxCount">0</b></span></div></details></section>
+
+    <section id="backupReminder" class="backup-reminder" hidden>
+      <strong>Backup reminder</strong><span id="backupReminderText"></span><button id="backupNow">Export backup now</button>
+    </section>
+    <section class="meta-line"><span id="versionLabel"></span><span id="lastBackupLabel">Last backup: never</span></section>
+
+    <section id="viewMap" class="view">
+      <section class="card map-card">
+        <div class="section-title"><div><span class="eyebrow">FARM AT A GLANCE</span><h2>Map</h2></div><button id="locateMe" class="secondary">◎ Locate me</button></div>
+        <p id="locationStatus" class="muted">Location stays private on this device unless you explicitly share it.</p>
+        <div id="farmMap" class="farm-map" role="application" aria-label="Farm field map"><div id="geoMap" class="geo-map" hidden></div><div id="fallbackMap"><div class="map-empty"><strong>No mapped fields yet.</strong><span>Choose a field or pasture, then add its boundary.</span></div></div></div>
+        <div class="map-actions"><button id="mapAddBoundary">+ Draw boundary</button><button id="mapUndoPoint" class="secondary">Undo point</button><button id="mapSaveBoundary" class="secondary">Save boundary</button></div>
+        <div class="layer-toolbar"><label>Basemap <select id="basemapSelect"><option value="usgs_imagery" selected>USGS aerial imagery</option><option value="usgs_topo">USGS topographic</option><option value="none">Fields only</option></select></label><label><input id="soilLayerToggle" type="checkbox"> USDA soils</label><label><input id="cropContextToggle" type="checkbox"> USDA crop context</label><label><input id="slopeLayerToggle" type="checkbox"> USGS slope</label><label><input id="waterLayerToggle" type="checkbox"> Surface water</label><button id="refreshWeather" class="secondary">Refresh NWS weather</button></div><div class="context-note">Nearby crop context is public satellite-derived classification, not another farmer’s private CropChronicle records.</div><div id="providerStatus" class="muted">External layers are optional. Offline farm records remain available.</div><div id="mapLegend" class="map-legend" aria-label="Crop legend"></div>
+      </section>
+      <section class="card">
+        <div class="section-title"><div><span class="eyebrow">FIELD INTELLIGENCE</span><h2 id="mapPlaceTitle">Choose a field</h2></div><button id="mapOpenChronicle" class="secondary">Chronicle</button></div>
+        <div id="fieldSummary" class="field-summary"></div><section class="history-panel"><div id="rotationStrip" class="rotation-strip"></div><div id="yieldTrend" class="yield-trend" role="img" aria-label="Yield history"></div><div class="section-head"><h3>Season history</h3></div><div id="seasonHistory" class="season-history"></div><p id="historyNote" class="muted"></p></section><section class="prediction-panel"><div class="section-head"><h3>Field pattern discovery</h3><span class="muted">Local · evidence-led · no automatic dosing</span></div><div id="fieldPredictions" aria-live="polite"></div><div class="section-head"><h3>Season relationships</h3><span class="muted">Exploratory correlations · not causal</span></div><div id="fieldRelationships" class="relationship-grid"></div><div class="section-head"><h3>Field experiment</h3><span class="muted">Pre-register before outcome</span></div><button id="planExperiment" class="secondary">Plan controlled comparison</button></section><div id="fieldIntel" class="intel-grid"><span class="muted">Select a mapped Place to see crop, acreage, tasks and seasonal context.</span></div>
+        <div class="field-actions"><button id="setSeason">Set crop / season</button><button id="addScout" class="secondary">+ Scout observation</button><button id="addHarvest" class="secondary">+ Harvest / yield</button><button id="addApplication" class="secondary">+ Application / input</button></div>
+      </section>
+      <section class="card">
+        <div class="section-title"><div><span class="eyebrow">AGRICULTURAL ALMANAC</span><h2>Seasonal intelligence</h2></div></div>
+        <p class="muted">Measured conditions, forecasts, agronomic references and traditional almanac guidance remain visibly separated and sourced.</p>
+        <div class="almanac-toolbar"><button id="addWeatherSnapshot" class="secondary">+ Weather snapshot</button><button id="addAlmanacNote" class="secondary">+ Almanac note</button></div>
+        <div id="almanacCards" class="intel-grid"><article class="intel-item"><strong>Offline ready</strong><span>Online weather and reference layers will show source and freshness when configured.</span></article></div>
+      </section>
+    </section>
+
+    <section id="viewToday" class="view" hidden><div class="today-dashboard"><div id="todayScorecard" class="today-scorecard"></div><div class="section-head"><h2>Needs attention</h2><span class="muted">Rule-based from your records</span></div><div id="todayAttention" class="today-attention"></div></div>
+      <div class="card">
+        <div class="section-title"><div><span class="eyebrow">START HERE</span><h2>Today</h2></div><button id="addTask">+ Task</button></div>
+        <p class="muted">Task reminders show when you open CropChronicle. No push notifications are used.</p>
+        <div class="task-group overdue-group"><h3>Overdue</h3><div id="tasksOverdue"></div></div>
+        <div class="task-group"><h3>Today</h3><div id="tasksToday"></div></div>
+        <div class="task-group"><h3>Next 7 days</h3><div id="tasksNext7"></div></div>
+      </div>
+    </section>
+
+    <section id="viewPlaces" class="view" hidden>
+      <section class="card"><div class="section-title"><h2>Farms</h2><button id="addFarm">+ Farm</button></div><div id="farms"></div></section>
+      <section class="card"><div class="section-title"><h2>Places</h2><button id="addPlace">+ Place</button></div><p class="muted">A Place can be a field, greenhouse, barn, pasture, or herd/pen.</p><div id="places"></div></section>
+      <section class="card actions"><button id="addEvent">+ Record event</button><label class="button secondary">Add photo<input id="photoInput" type="file" accept="image/*" capture="environment" hidden></label><small id="photoStatus">Photos are made smaller for storage and stay on this phone.</small></section>
+    </section>
+
+    <section id="viewChronicle" class="view" hidden>
+      <section class="card"><div class="section-title"><div><h2>Chronicle</h2><small id="chroniclePlaceLabel">Choose a Place</small></div><button id="exportBackup" class="secondary">Export backup</button></div><div id="timeline"></div></section>
+    </section>
+  </main></div>
+
+  <div id="saveToast" class="toast" role="status" aria-live="polite" hidden>Saved on this phone ✓</div>
+
+  <dialog id="applicationDialog"><h2>Application / input record</h2><form id="applicationForm"><p class="muted">Record what was actually applied. CropChronicle does not calculate or recommend pesticide rates.</p><label>Date<input id="applicationDate" type="date" required></label><label>Category<select id="applicationCategory"><option>fertilizer</option><option>herbicide</option><option>fungicide</option><option>insecticide</option><option>lime</option><option>seed treatment</option><option>biological</option><option>irrigation</option><option>other</option></select></label><label>Product / material<input id="applicationProduct" required></label><label>Recorded rate<input id="applicationRate" type="number" min="0" step="0.001"></label><label>Rate unit<input id="applicationRateUnit" placeholder="lb/ac, gal/ac, oz/ac, etc."></label><label>Total amount<input id="applicationTotal" type="number" min="0" step="0.001"></label><label>Notes<textarea id="applicationNotes"></textarea></label><div class="wizard-actions"><button type="button" id="cancelApplication" class="secondary">Cancel</button><button type="submit">Save record</button></div></form></dialog>
+  <dialog id="harvestDialog"><h2>Harvest / yield</h2><form id="harvestForm"><label>Harvest date<input id="harvestDate" type="date" required></label><label>Amount<input id="harvestAmount" type="number" min="0" step="0.01" required></label><label>Unit<select id="harvestUnit"><option value="bu">bushels</option><option value="lb">pounds</option><option value="ton">tons</option><option value="kg">kilograms</option><option value="bale">bales</option><option value="count">count</option></select></label><label>Harvested acres<input id="harvestAcres" type="number" min="0.01" step="0.01"></label><label>Moisture %<input id="harvestMoisture" type="number" min="0" step="0.1"></label><label>Notes<textarea id="harvestNotes"></textarea></label><div class="wizard-actions"><button type="button" id="cancelHarvest" class="secondary">Cancel</button><button type="submit">Save harvest</button></div></form></dialog>
+  <dialog id="weatherDialog"><h2>Weather snapshot</h2><form id="weatherForm"><p class="muted">Manual observations are farmer-entered records. Provider data will use the same sourced format.</p><label>Temperature °F<input id="weatherTemp" type="number" step="0.1"></label><label>Humidity %<input id="weatherHumidity" type="number" step="0.1"></label><label>Wind speed<input id="weatherWind" type="number" step="0.1"></label><label>Wind gust<input id="weatherGust" type="number" step="0.1"></label><label>Precipitation<input id="weatherPrecip" type="number" step="0.01"></label><label>Notes<textarea id="weatherNotes"></textarea></label><div class="wizard-actions"><button type="button" id="cancelWeather" class="secondary">Cancel</button><button type="submit">Save snapshot</button></div></form></dialog>
+  <dialog id="almanacNoteDialog"><h2>Almanac note</h2><form id="almanacNoteForm"><label>Kind<select id="almanacKind"><option value="measured">Measured / recorded</option><option value="agronomic_reference">Agronomic reference</option><option value="traditional">Traditional almanac</option></select></label><label>Title<input id="almanacTitle" required></label><label>Details<textarea id="almanacDetail" required></textarea></label><label>Source / reference<input id="almanacSource" placeholder="Farmer observation, extension publication, book, etc."></label><div class="wizard-actions"><button type="button" id="cancelAlmanacNote" class="secondary">Cancel</button><button type="submit">Save note</button></div></form></dialog>
+  <dialog id="seasonDialog"><h2>Crop / season</h2><form id="seasonForm"><label>Crop<select id="seasonCrop" required></select></label><label>Variety / hybrid<input id="seasonVariety" placeholder="Optional"></label><label>Planting date<input id="seasonPlanted" type="date"></label><label>Status<select id="seasonStatus"><option value="planned">Planned</option><option value="growing">Growing</option><option value="harvested">Harvested</option><option value="terminated">Terminated</option></select></label><label>Notes<textarea id="seasonNotes"></textarea></label><div class="wizard-actions"><button type="button" id="cancelSeason" class="secondary">Cancel</button><button type="submit">Save season</button></div></form></dialog>
+  <dialog id="scoutDialog"><h2>Scout observation</h2><form id="scoutForm"><label>Category<select id="scoutCategory"><option>weed</option><option>insect</option><option>disease</option><option>nutrient</option><option>water</option><option>wildlife</option><option>damage</option><option>other</option></select></label><label>Severity<select id="scoutSeverity"><option value="trace">Trace</option><option value="low">Low</option><option value="moderate">Moderate</option><option value="high">High</option></select></label><label>Notes<textarea id="scoutNotes" required placeholder="What did you see?"></textarea></label><label><input id="scoutUseLocation" type="checkbox" checked> Attach current GPS location</label><div class="wizard-actions"><button type="button" id="cancelScout" class="secondary">Cancel</button><button type="submit">Save observation</button></div></form></dialog>
+  <dialog id="taskDialog">
+    <h2>Add task</h2>
+    <form id="taskForm">
+      <label>Task title<input id="taskTitle" required placeholder="Example: Check south pasture water"></label>
+      <label>Place<select id="taskPlace" required></select></label>
+      <label>Due date<input id="taskDue" type="date" required></label>
+      <label>Repeat<select id="taskRepeat"><option value="none">No repeat</option><option value="daily">Daily</option><option value="weekly">Weekly</option><option value="every_n_days">Every N days</option><option value="monthly">Monthly</option></select></label>
+      <label id="taskIntervalWrap" hidden>Every how many days?<input id="taskInterval" inputmode="numeric" type="number" min="1" value="2"></label>
+      <label>Notes<textarea id="taskNotes" placeholder="Optional notes"></textarea></label>
+      <div class="wizard-actions"><button type="button" id="cancelTask" class="secondary">Cancel</button><button type="submit">Save task</button></div>
+    </form>
+  </dialog>
+
+  <dialog id="installGuide">
+    <h2>Add to Home Screen</h2>
+    <p>Do this once in Safari so CropChronicle is easy to open from the field.</p>
+    <div class="install-pictures">
+      <figure><div class="phone-pic"><div class="safari-bar">cropchronicle.pages.dev</div><div class="share-box">⇧</div></div><figcaption>1. Tap Safari's Share button.</figcaption></figure>
+      <figure><div class="phone-pic"><div class="menu-line">Copy</div><div class="menu-line">Bookmark</div><div class="menu-line highlight">＋ Add to Home Screen</div></div><figcaption>2. Choose “Add to Home Screen”.</figcaption></figure>
+      <figure><div class="phone-pic center"><div class="app-icon">CC</div><strong>CropChronicle</strong><div class="add-pill">Add</div></div><figcaption>3. Tap Add. Open it from the new icon.</figcaption></figure>
+    </div>
+    <button id="closeInstall">Got it</button>
+  </dialog>
+
+  <dialog id="firstRun" class="wizard">
+    <div class="step-count" id="wizardCount"></div>
+    <h2 id="wizardTitle"></h2>
+    <div id="wizardBody"></div>
+    <div class="wizard-actions"><button id="wizardBack" class="secondary">Back</button><button id="wizardNext">Continue</button></div>
+  </dialog>
+
+  <dialog id="experimentDialog"><h2>Plan field experiment</h2><form id="experimentForm"><p class="muted">Record the hypothesis and comparison before collecting the outcome. CropChronicle does not prescribe pesticide or fertilizer rates.</p><label>Season year<input id="experimentYear" type="number" min="2000" max="2100" required></label><label>Title<input id="experimentTitle" required placeholder="Example: planting window comparison"></label><label>Hypothesis<textarea id="experimentHypothesis" required></textarea></label><label>Treatment / practice A<textarea id="experimentTreatment" required></textarea></label><label>Control / practice B<textarea id="experimentControl" required></textarea></label><label>Outcome metric<input id="experimentMetric" required placeholder="Example: dry yield bu/ac"></label><div class="wizard-actions"><button type="button" id="cancelExperiment" class="secondary">Cancel</button><button type="submit">Pre-register experiment</button></div></form></dialog>
+
+<div id="bootStatus" role="status" aria-live="polite" style="position:fixed;right:12px;bottom:12px;z-index:9999;padding:8px 10px;border:1px solid currentColor;border-radius:8px;background:#111;color:#ddd;font:12px/1.3 system-ui">STARTING…</div>
+  <script>
+    window.__cropchronicleBootError = function(error){
+      const el=document.getElementById('bootStatus');
+      if(el){el.textContent='STARTUP ERROR: '+(error?.message||String(error));el.style.color='#ffb4ab';}
+      console.error('CropChronicle startup error',error);
+    };
+    window.addEventListener('error',function(event){window.__cropchronicleBootError(event.error||event.message);});
+    window.addEventListener('unhandledrejection',function(event){window.__cropchronicleBootError(event.reason);});
+  </script>
+  <script type="module">
+    import('./app.mjs').then(function(){
+      const el=document.getElementById('bootStatus');
+      if(el){el.textContent='READY';setTimeout(function(){el.remove();},2500);}
+    }).catch(window.__cropchronicleBootError);
+  </script></body>
+</html>
