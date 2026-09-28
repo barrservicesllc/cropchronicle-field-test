@@ -1,0 +1,24 @@
+{
+  "name": "CropChronicle",
+  "short_name": "CropChronicle",
+  "id": "./",
+  "start_url": "./",
+  "scope": "./",
+  "display": "standalone",
+  "background_color": "#08120c",
+  "theme_color": "#102116",
+  "orientation": "any",
+  "description": "Offline-first farm field history, tasks, observations, applications, harvests, weather and field notes.",
+  "categories": [
+    "productivity",
+    "utilities"
+  ],
+  "icons": [
+    {
+      "src": "./icon.svg",
+      "sizes": "any",
+      "type": "image/svg+xml",
+      "purpose": "any maskable"
+    }
+  ]
+}
